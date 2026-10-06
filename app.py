@@ -74,11 +74,11 @@ MAPA_NOMES = {
 
 # --- FUNÇÃO AUXILIAR: GERADOR DE PDF ---
 def sanitizar_texto(texto: str) -> str:
-    """Limpa emojis e markdown mantendo a acentuação em português para o PDF."""
+    """Substitui caracteres fora da tabela Latin-1 e remove markdown/emojis."""
     if not texto:
         return ""
     substituicoes = {
-        "–": "-", "—": "-", "“": '"', "”": '"', "‘": "'", "’": "'",
+        "—": "-", "–": "-", "“": '"', "”": '"', "‘": "'", "’": "'",
         "•": "-", "…": "...", "🩺": "", "🟢": "", "🟡": "", "🟠": "",
         "🔴": "", "⚠️": "", "🚨": "", "🛑": "", "✅": "", "**": "",
         "*": "", "###": "", "##": "", "#": ""
@@ -90,11 +90,12 @@ def sanitizar_texto(texto: str) -> str:
 
 class PDFLaudo(FPDF):
     def header(self):
-        self.set_font("Helvetica", "B", 13)
-        self.cell(0, 8, "LAUDO DE AVALIAÇÃO POSTURAL — PROTOCOLO DE PORTLAND", align="C", new_x="LMARGIN", new_y="NEXT")
-        self.set_font("Helvetica", "I", 9)
+        self.set_font("Helvetica", "B", 12)
+        # Usando hífen comum '-' em vez de travessão '—' para não quebrar a codificação
+        self.cell(0, 8, sanitizar_texto("LAUDO DE AVALIAÇÃO POSTURAL - PROTOCOLO DE PORTLAND"), align="C", new_x="LMARGIN", new_y="NEXT")
+        self.set_font("Helvetica", "I", 8.5)
         self.set_text_color(100, 100, 100)
-        self.cell(0, 5, "Sistema Digital de Triagem Biomecânica", align="C", new_x="LMARGIN", new_y="NEXT")
+        self.cell(0, 5, sanitizar_texto("Sistema Digital de Triagem Biomecânica"), align="C", new_x="LMARGIN", new_y="NEXT")
         self.set_draw_color(180, 180, 180)
         self.line(10, 24, 200, 24)
         self.ln(6)
@@ -103,7 +104,7 @@ class PDFLaudo(FPDF):
         self.set_y(-15)
         self.set_font("Helvetica", "I", 8)
         self.set_text_color(128, 128, 128)
-        self.cell(0, 10, f"Página {self.page_no()}/{{nb}} | Documento de apoio diagnóstico", align="C")
+        self.cell(0, 10, sanitizar_texto(f"Página {self.page_no()}/{{nb}} | Documento de apoio diagnóstico"), align="C")
 
 
 def criar_pdf_relatorio(nome, idade, genero, avaliador, icp, status, pontuacao, scores, laudo_texto, fig_grafico):
@@ -113,7 +114,7 @@ def criar_pdf_relatorio(nome, idade, genero, avaliador, icp, status, pontuacao, 
     pdf.add_page()
 
     # 1. Metadados do Paciente
-    pdf.set_font("Helvetica", "B", 10)
+    pdf.set_font("Helvetica", "B", 9.5)
     pdf.set_text_color(0, 0, 0)
     data_atual = datetime.now().strftime("%d/%m/%Y")
     
@@ -126,9 +127,9 @@ def criar_pdf_relatorio(nome, idade, genero, avaliador, icp, status, pontuacao, 
 
     # 2. Caixa de Métricas
     pdf.set_fill_color(240, 244, 248)
-    pdf.set_font("Helvetica", "B", 11)
+    pdf.set_font("Helvetica", "B", 10.5)
     resumo_metricas = f"Pontuação Total: {pontuacao}/30 pts   |   ICP: {icp:.1f}%   |   Classificação: {status}"
-    pdf.cell(0, 9, sanitizar_texto(resumo_metricas), border=1, align="C", fill=True, new_x="LMARGIN", new_y="NEXT")
+    pdf.cell(0, 8.5, sanitizar_texto(resumo_metricas), border=1, align="C", fill=True, new_x="LMARGIN", new_y="NEXT")
     pdf.ln(4)
 
     # 3. Tabela do Protocolo de Portland
@@ -156,11 +157,11 @@ def criar_pdf_relatorio(nome, idade, genero, avaliador, icp, status, pontuacao, 
     pdf.image(buf_img, x=20, w=170)
     pdf.ln(2)
 
-    # 5. Laudo Clínico Descritivo
+    # 5. Laudo Clínico Descritivo (se gerado)
     if laudo_texto:
         pdf.add_page()
         pdf.set_font("Helvetica", "B", 11)
-        pdf.cell(0, 7, "PARECER CLÍNICO & CONDUTA SUGERIDA", new_x="LMARGIN", new_y="NEXT")
+        pdf.cell(0, 7, sanitizar_texto("PARECER CLÍNICO & CONDUTA SUGERIDA"), new_x="LMARGIN", new_y="NEXT")
         pdf.ln(2)
         pdf.set_font("Helvetica", "", 9)
         pdf.multi_cell(0, 5.5, sanitizar_texto(laudo_texto))
