@@ -1,7 +1,0 @@
-streamlit
-pandas
-matplotlib
-pillow
-google-genai
-pydantic
-fpdf2
